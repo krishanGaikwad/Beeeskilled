@@ -1,0 +1,89 @@
+import numpy as np
+import pandas as pd
+
+# ---------------------------------------------------------
+# Step 1: Load the Dataset
+# ---------------------------------------------------------
+# Download "Students Performance in Exams" dataset from Kaggle
+# Ensure 'student_marks.csv' is saved in the same folder as this script
+df = pd.read_csv("student_marks.csv")
+
+# Quick inspection of the dataset
+print("--- FIRST 5 ROWS ---")
+print(df.head())
+print("\n--- DATASET INFO ---")
+print(df.info())
+
+# ---------------------------------------------------------
+# Step 2: Clean Missing Data
+# ---------------------------------------------------------
+print("\n--- MISSING VALUES BEFORE CLEANING ---")
+print(df.isnull().sum())
+
+# Define numerical and categorical columns based on the dataset schema[span_0](start_span)[span_0](end_span)
+score_cols = ["math score", "reading score", "writing score"]  #[span_1](start_span)[span_1](end_span)
+cat_cols = [
+    "Gender",
+    "race/ethnicity",
+    "parental level of education",
+    "test preparation course",
+]  #[span_2](start_span)[span_2](end_span)
+
+# Fill missing numerical scores with column median
+for col in score_cols:
+  if col in df.columns and df[col].isnull().sum() > 0:
+    df[col] = df[col].fillna(df[col].median())
+
+# Fill missing categorical values with the mode
+for col in cat_cols:
+  if col in df.columns and df[col].isnull().sum() > 0:
+    df[col] = df[col].fillna(df[col].mode()[0])
+
+print("\n--- MISSING VALUES AFTER CLEANING ---")
+print(df.isnull().sum())
+
+# ---------------------------------------------------------
+# Step 3: Calculate Average, Max, and Min Scores
+# ---------------------------------------------------------
+# Add an overall average score for each student
+df["overall_average"] = df[score_cols].mean(axis=1)
+
+# Summary statistics using Pandas aggregation functions[span_3](start_span)[span_3](end_span)
+stats_pd = df[score_cols].agg(["mean", "max", "min"]).round(2)
+print("\n--- SUMMARY STATISTICS (PANDAS) ---")
+print(stats_pd)
+
+# Summary statistics using NumPy arrays[span_4](start_span)[span_4](end_span)
+print("\n--- SUMMARY STATISTICS (NUMPY) ---")
+for col in score_cols:
+  arr = df[col].to_numpy()
+  avg_score = np.mean(arr)
+  max_score = np.max(arr)
+  min_score = np.min(arr)
+  print(
+      f"{col.title()} -> Average: {avg_score:.2f} | Max: {max_score} | Min:"
+      f" {min_score}"
+  )
+
+# ---------------------------------------------------------
+# Step 4: Display Grouped Results & Analysis
+# ---------------------------------------------------------
+# Comprehensive descriptive statistics table
+print("\n--- DETAILED DESCRIBE TABLE ---")
+print(df[score_cols].describe().round(2))
+
+# Group performance by Test Preparation Course
+print("\n--- AVERAGE SCORES BY TEST PREPARATION COURSE ---")
+prep_group = df.groupby("test preparation course")[score_cols].mean().round(2)
+print(prep_group)
+
+# Group performance by Parental Level of Education
+print("\n--- AVERAGE SCORES BY PARENTAL EDUCATION LEVEL ---")
+parent_group = (
+    df.groupby("parental level of education")[score_cols].mean().round(2)
+)
+print(parent_group)
+
+# Save cleaned dataset with calculated results to a new CSV file
+df.to_csv("cleaned_student_marks.csv", index=False)
+print("\nCleaned dataset saved successfully as 'cleaned_student_marks.csv'.")
